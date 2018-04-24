@@ -62,6 +62,8 @@ def get_member(id: UUID) -> dict:
 
 @member_required
 def update_member(id: UUID, data: dict = None, score: float = 0) -> bool:
+    data = data or {}
+
     current_data = client.hget(member_data, id)
     current_data = json.loads(current_data)
 
