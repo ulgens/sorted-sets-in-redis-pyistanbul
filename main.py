@@ -1,4 +1,5 @@
 import json
+from time import time
 from uuid import UUID, uuid4
 
 from redis import StrictRedis
@@ -17,6 +18,16 @@ client = StrictRedis(
 )
 
 
+def timer(func):
+    def wrapper(*args, **kwargs):
+        ts = time()
+        result = func(*args, **kwargs)
+        te = time()
+        print('func:%r took: %2.4f sec' % (func.__name__, te - ts))
+        return result
+    return wrapper
+
+
 class MemberNotFoundException(Exception):
     def __init__(self):
         default_message = "A member with given id doesn't exist."
@@ -30,11 +41,12 @@ def member_required(func):
         if score is None:
             raise MemberNotFoundException
 
-        func(id, *args, **kwargs)
+        return func(id, *args, **kwargs)
     return wrapper
 
 
-def add_member(data: dict = None, score: float = 0) -> UUID:
+@timer
+def add_member(data: dict = None, score: float = 0) -> str:
     if not any([data, score]):
         raise ValueError("Empty member cannot be created.")
 
@@ -44,26 +56,28 @@ def add_member(data: dict = None, score: float = 0) -> UUID:
     client.zadd(leaderboard, score, id)  # Refer to zadd docstring for parameters
     client.hset(member_data, id, json.dumps(data))
 
-    return id
+    return str(id)
 
 
+@timer
 @member_required
-def get_member(id: UUID) -> dict:
+def get_member(id: str) -> dict:
     data = client.hget(member_data, id)
-    data = json.loads(data)
+    data = json.loads(data or {})
 
     member = {
         "id": id,
         "score": client.zscore(leaderboard, id),
-        "rank": client.zrank(leaderboard, id),
+        "rank": client.zrevrank(leaderboard, id),
         **data
     }
 
     return member
 
 
+@timer
 @member_required
-def update_member(id: UUID, data: dict = None, score: float = 0) -> bool:
+def update_member(id: str, data: dict = None, score: float = 0) -> bool:
     data = data or {}
 
     current_data = client.hget(member_data, id)
@@ -79,9 +93,47 @@ def update_member(id: UUID, data: dict = None, score: float = 0) -> bool:
     return True
 
 
+@timer
 @member_required
 def delete_member(id: UUID) -> bool:
     client.zrem(leaderboard, id)
     client.hdel(member_data, id)
 
     return True
+
+
+@timer
+def get_leaders(limit: int = 25) -> list:
+    leaders = client.zrevrange(leaderboard, 0, limit-1)
+    leaders_w_score_rank = []
+
+    for l in leaders:
+        rank = client.zrevrank(leaderboard, l)
+        score = client.zscore(leaderboard, l)
+
+        leaders_w_score_rank.append({"id": id, "score": score, "rank": rank})
+
+    return leaders_w_score_rank
+
+
+@timer
+@member_required
+def get_around(id: str, limit: int = 25) -> list:
+    member_rank = client.zrevrank(leaderboard, id)
+
+    if member_rank < round(limit / 2):
+        start, end = 0, limit
+    else:
+        start = member_rank - round(limit / 2)
+        end = start + limit
+
+    around = client.zrevrange(leaderboard, start, end)
+    around_w_score_rank = []
+
+    for a in around:
+        rank = client.zrevrank(leaderboard, a)
+        score = client.zscore(leaderboard, a)
+
+        around_w_score_rank.append({"id": id, "score": score, "rank": rank})
+
+    return around_w_score_rank
