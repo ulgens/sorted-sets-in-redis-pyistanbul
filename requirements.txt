@@ -1,0 +1,5 @@
+redis==2.10.6
+
+# dev
+ipython
+ipdb
