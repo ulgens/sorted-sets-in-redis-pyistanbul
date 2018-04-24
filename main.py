@@ -34,13 +34,15 @@ def member_required(func):
     return wrapper
 
 
-def add_member(fullname: str = "", score: float = 0) -> UUID:
-    if not any([fullname, score]):
+def add_member(data: dict = None, score: float = 0) -> UUID:
+    if not any([data, score]):
         raise ValueError("Empty member cannot be created.")
+
+    data = data or {}
 
     id = uuid4()
     client.zadd(leaderboard, score, id)  # Refer to zadd docstring for parameters
-    client.hset(member_data, id, json.dumps({"fullname": fullname}))
+    client.hset(member_data, id, json.dumps(data))
 
     return id
 
@@ -70,8 +72,9 @@ def update_member(id: UUID, data: dict = None, score: float = 0) -> bool:
     # Override existing keys with new values
     new_data = {**current_data, **data}
 
-    client.zadd(leaderboard, score, id)
+    # json.dumps handle JSON validation, call it first
     client.hset(member_data, id, json.dumps(new_data))
+    client.zadd(leaderboard, score, id)
 
     return True
 
