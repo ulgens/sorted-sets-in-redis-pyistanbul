@@ -1,8 +1,10 @@
 import json
+from random import randint
 from time import time
 from uuid import UUID, uuid4
 
 from redis import StrictRedis
+from tqdm import tqdm
 
 leaderboard = "users"
 member_data = "additional_info"
@@ -137,3 +139,9 @@ def get_around(id: str, limit: int = 25) -> list:
         around_w_score_rank.append({"id": id, "score": score, "rank": rank})
 
     return around_w_score_rank
+
+
+def load_dummy_data(size: int = 1000000):
+    for i in tqdm(range(size)):
+        client.zadd(leaderboard, randint(0, size), f"member#{i}")
+
