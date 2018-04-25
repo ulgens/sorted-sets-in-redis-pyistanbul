@@ -64,15 +64,17 @@ def add_member(id: str = "", data: dict = None, score: float = 0) -> str:
 @timer
 @member_required
 def get_member(id: str) -> dict:
-    data = client.hget(member_data, id)
-    data = json.loads(data or {})
-
     member = {
         "id": id,
         "score": client.zscore(leaderboard, id),
         "rank": client.zrevrank(leaderboard, id),
-        **data
     }
+
+    data = client.hget(member_data, id)
+
+    if data:
+        data = json.loads(data)
+        member = {**member, **data}
 
     return member
 
