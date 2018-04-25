@@ -1,7 +1,7 @@
 import json
 from random import randint
 from time import time
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from redis import StrictRedis
 from tqdm import tqdm
@@ -48,13 +48,13 @@ def member_required(func):
 
 
 @timer
-def add_member(data: dict = None, score: float = 0) -> str:
+def add_member(id: str = "", data: dict = None, score: float = 0) -> str:
     if not any([data, score]):
         raise ValueError("Empty member cannot be created.")
 
     data = data or {}
+    id = id or uuid4()
 
-    id = uuid4()
     client.zadd(leaderboard, score, id)  # Refer to zadd docstring for parameters
     client.hset(member_data, id, json.dumps(data))
 
@@ -97,7 +97,7 @@ def update_member(id: str, data: dict = None, score: float = 0) -> bool:
 
 @timer
 @member_required
-def delete_member(id: UUID) -> bool:
+def delete_member(id: str) -> bool:
     client.zrem(leaderboard, id)
     client.hdel(member_data, id)
 
@@ -113,7 +113,7 @@ def get_leaders(limit: int = 25) -> list:
         rank = client.zrevrank(leaderboard, l)
         score = client.zscore(leaderboard, l)
 
-        leaders_w_score_rank.append({"id": id, "score": score, "rank": rank})
+        leaders_w_score_rank.append({"id": l, "score": score, "rank": rank})
 
     return leaders_w_score_rank
 
