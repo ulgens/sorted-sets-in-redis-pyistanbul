@@ -25,7 +25,7 @@ def timer(func):
         ts = time()
         result = func(*args, **kwargs)
         te = time()
-        print('func:%r took: %2.4f sec' % (func.__name__, te - ts))
+        print("%2.4f sec" % (te - ts))
         return result
     return wrapper
 
