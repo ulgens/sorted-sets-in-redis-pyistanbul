@@ -3,4 +3,4 @@ tqdm==4.32.2
 
 # dev
 ipython==7.7.0
-ipdb==0.12.1
+ipdb==0.12.2
