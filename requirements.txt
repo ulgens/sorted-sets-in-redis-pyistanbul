@@ -1,4 +1,4 @@
-redis==3.3.7
+redis==3.3.8
 tqdm==4.33.0
 
 # dev
