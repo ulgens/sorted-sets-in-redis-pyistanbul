@@ -1,5 +1,5 @@
 redis==3.3.8
-tqdm==4.33.0
+tqdm==4.34.0
 
 # dev
 ipython==7.7.0
