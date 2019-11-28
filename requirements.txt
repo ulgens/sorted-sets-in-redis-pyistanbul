@@ -2,5 +2,5 @@ redis==3.3.11
 tqdm==4.39.0
 
 # dev
-ipython==7.9.0
+ipython==7.10.0
 ipdb==0.12.2
